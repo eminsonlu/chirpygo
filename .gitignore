@@ -1,3 +1,6 @@
 assets/*
 out
 chirpygo
+*.json
+*.log
+chirpygo
