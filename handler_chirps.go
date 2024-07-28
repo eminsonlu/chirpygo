@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+	"strconv"
 )
 
 type Chirp struct {
@@ -58,4 +59,30 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Reque
 	})
 
 	respondWithJSON(w, http.StatusOK, chirps)
+}
+
+func (cfg *apiConfig) handlerChirpsRetrieveOne(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	dbChirp, err := cfg.DB.GetChirps()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't retrieve chirp")
+		return
+	}
+	idi, err := strconv.Atoi(id)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid ID")
+		return
+	}
+
+	if idi > len(dbChirp) {
+		respondWithError(w, http.StatusNotFound, "Chirp not found")
+		return
+	}
+
+	chirp := Chirp{
+		ID:   dbChirp[idi-1].ID,
+		Body: dbChirp[idi-1].Body,
+	}
+
+	respondWithJSON(w, http.StatusOK, chirp)
 }
