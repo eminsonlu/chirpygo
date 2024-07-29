@@ -17,19 +17,6 @@ type DBStructure struct {
 	Users  map[int]User  `json:"users"`
 }
 
-type Chirp struct {
-	ID   int    `json:"id"`
-	Body string `json:"body"`
-}
-
-type User struct {
-	ID           int    `json:"id"`
-	Email        string `json:"email"`
-	Password     string `json:"password"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresAt    int64  `json:"expires_at"`
-}
-
 func NewDB(path string) (*DB, error) {
 	db := &DB{
 		path: path,

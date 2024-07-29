@@ -14,6 +14,7 @@ type apiConfig struct {
 	fileserverHits int
 	DB             *database.DB
 	JWTSecret      string
+	PolkaKey       string
 }
 
 func main() {
@@ -22,6 +23,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 	jwtSecret := os.Getenv("JWT_SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
 
 	mux := http.NewServeMux()
 
@@ -45,17 +47,17 @@ func main() {
 		fileserverHits: 0,
 		DB:             db,
 		JWTSecret:      jwtSecret,
+		PolkaKey:       polkaKey,
 	}
 
 	mux.Handle("/app/*", http.StripPrefix("/app", cfg.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("GET /admin/metrics", cfg.handlerMetrics)
 	mux.HandleFunc("/api/reset", cfg.handlerReset)
-	mux.HandleFunc("POST /api/validate_chirp", validateChirp)
+	mux.HandleFunc("POST /api/validate_chirp", ValidateChirp)
 
 	mux.HandleFunc("POST /api/chirps", cfg.handlerChirpsCreate)
 	mux.HandleFunc("GET /api/chirps", cfg.handlerChirpsRetrieve)
-	mux.HandleFunc("GET /api/chirps/{id}", cfg.handlerChirpsRetrieveOne)
 
 	mux.HandleFunc("POST /api/users", cfg.handlerUsersCreate)
 	mux.HandleFunc("GET /api/users", cfg.handlerUsersRetrieve)
@@ -64,6 +66,10 @@ func main() {
 	mux.HandleFunc("PUT /api/users", cfg.handlerUsersUpdate)
 	mux.HandleFunc("POST /api/refresh", cfg.handlerUsersRefresh)
 	mux.HandleFunc("POST /api/revoke", cfg.handlerUsersRevoke)
+	mux.HandleFunc("GET /api/chirps/{chirpID}", cfg.handlerChirpsGet)
+	mux.HandleFunc("DELETE /api/chirps/{chirpID}", cfg.handlerChirpsDelete)
+
+	mux.HandleFunc("POST /api/polka/webhooks", cfg.handlerPolka)
 
 	server := &http.Server{
 		Handler: mux,

@@ -2,6 +2,15 @@ package database
 
 import "errors"
 
+type User struct {
+	ID           int    `json:"id"`
+	Email        string `json:"email"`
+	Password     string `json:"password"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresAt    int64  `json:"expires_at"`
+	IsChirpyRed  bool   `json:"is_chirpy_red"`
+}
+
 func (db *DB) CreateUser(email string, password string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
@@ -10,9 +19,10 @@ func (db *DB) CreateUser(email string, password string) (User, error) {
 
 	id := len(dbStructure.Users) + 1
 	user := User{
-		ID:       id,
-		Email:    email,
-		Password: password,
+		ID:          id,
+		Email:       email,
+		Password:    password,
+		IsChirpyRed: false,
 	}
 	dbStructure.Users[id] = user
 
@@ -129,6 +139,27 @@ func (db *DB) RevokeUserToken(id int) error {
 	user.ExpiresAt = 0
 	dbStructure.Users[id] = user
 
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *DB) UpdateUserChirpyRed(id int) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	user, ok := dbStructure.Users[id]
+	if !ok {
+		return errors.New("User not found")
+	}
+
+	user.IsChirpyRed = true
+	dbStructure.Users[id] = user
 	err = db.writeDB(dbStructure)
 	if err != nil {
 		return err

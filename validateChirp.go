@@ -18,7 +18,7 @@ type errorResponse struct {
 	Error string `json:"error"`
 }
 
-func validateChirp(w http.ResponseWriter, r *http.Request) {
+func ValidateChirp(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
