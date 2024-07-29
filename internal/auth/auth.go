@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
@@ -72,4 +74,15 @@ func GetBearerToken(headers http.Header) (string, error) {
 	}
 
 	return splitAuth[1], nil
+}
+
+func MakeRefreshToken() (string, int64, error) {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", 0, err
+	}
+	refreshToken := hex.EncodeToString(b)
+	expiresAt := time.Now().Add(time.Hour * 24).Unix()
+	return refreshToken, expiresAt, nil
 }

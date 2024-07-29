@@ -53,6 +53,21 @@ func (db *DB) GetUserByEmail(email string) (User, error) {
 	return User{}, errors.New("user not found")
 }
 
+func (db *DB) GetUserByRefreshToken(token string) (User, error) {
+	dbStr, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	for _, user := range dbStr.Users {
+		if user.RefreshToken == token {
+			return user, nil
+		}
+	}
+
+	return User{}, errors.New("user not found")
+}
+
 func (db *DB) UpdateUser(id int, email, hashedPassword string) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
@@ -74,4 +89,50 @@ func (db *DB) UpdateUser(id int, email, hashedPassword string) (User, error) {
 	}
 
 	return user, nil
+}
+
+func (db *DB) UpdateUserToken(id int, token string, expiresAt int64) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	user, ok := dbStructure.Users[id]
+	if !ok {
+		return errors.New("user not found")
+	}
+
+	user.RefreshToken = token
+	user.ExpiresAt = expiresAt
+	dbStructure.Users[id] = user
+
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db *DB) RevokeUserToken(id int) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	user, ok := dbStructure.Users[id]
+	if !ok {
+		return errors.New("user not found")
+	}
+
+	user.RefreshToken = ""
+	user.ExpiresAt = 0
+	dbStructure.Users[id] = user
+
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

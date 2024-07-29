@@ -15,7 +15,8 @@ func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) 
 	}
 	type response struct {
 		User
-		Token string `json:"token"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -45,6 +46,18 @@ func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) 
 		params.ExpiresInSeconds = defaultExpiration
 	}
 
+	refreshToken, expires, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't create refresh token")
+		return
+	}
+
+	err = cfg.DB.UpdateUserToken(user.ID, refreshToken, expires)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't update user token")
+		return
+	}
+
 	token, err := auth.MakeJWT(user.ID, cfg.JWTSecret, time.Duration(params.ExpiresInSeconds)*time.Second)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create JWT")
@@ -56,6 +69,7 @@ func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) 
 			ID:    user.ID,
 			Email: user.Email,
 		},
-		Token: token,
+		Token:        token,
+		RefreshToken: refreshToken,
 	})
 }

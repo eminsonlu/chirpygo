@@ -23,9 +23,11 @@ type Chirp struct {
 }
 
 type User struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID           int    `json:"id"`
+	Email        string `json:"email"`
+	Password     string `json:"password"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresAt    int64  `json:"expires_at"`
 }
 
 func NewDB(path string) (*DB, error) {
