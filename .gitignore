@@ -4,3 +4,4 @@ chirpygo
 *.json
 *.log
 chirpygo
+.env

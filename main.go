@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/eminsonlu/chirpygo/internal/database"
+	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
@@ -12,9 +13,16 @@ import (
 type apiConfig struct {
 	fileserverHits int
 	DB             *database.DB
+	JWTSecret      string
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	jwtSecret := os.Getenv("JWT_SECRET")
+
 	mux := http.NewServeMux()
 
 	dbg := flag.Bool("debug", false, "Enable debug mode")
@@ -32,9 +40,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create database: %v", err)
 	}
+
 	cfg := &apiConfig{
 		fileserverHits: 0,
 		DB:             db,
+		JWTSecret:      jwtSecret,
 	}
 
 	mux.Handle("/app/*", http.StripPrefix("/app", cfg.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
@@ -49,6 +59,9 @@ func main() {
 
 	mux.HandleFunc("POST /api/users", cfg.handlerUsersCreate)
 	mux.HandleFunc("GET /api/users", cfg.handlerUsersRetrieve)
+
+	mux.HandleFunc("POST /api/login", cfg.handlerUsersLogin)
+	mux.HandleFunc("PUT /api/users", cfg.handlerUsersUpdate)
 
 	server := &http.Server{
 		Handler: mux,
